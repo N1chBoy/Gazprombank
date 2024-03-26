@@ -22,12 +22,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private DataSource dataSource;
 
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    protected void configure(final AuthenticationManagerBuilder auth)
+            throws Exception {
         auth.jdbcAuthentication()
                 .dataSource(dataSource)
                 .passwordEncoder(passwordEncoder())
-                .usersByUsernameQuery("select username, password, 1 from users where username = ?")
-                .authoritiesByUsernameQuery("select u.username, ur.roles from users u inner join user_role ur on u.id_user = ur.user_id where u.username = ?");
+                .usersByUsernameQuery("select username, " +
+                        "password, 1 from users where username = ?")
+                .authoritiesByUsernameQuery("select u.username, " +
+                        "ur.roles from users u inner join user_role " +
+                        "ur on u.id_user = ur.user_id where u.username = ?");
     }
 
     @Override
