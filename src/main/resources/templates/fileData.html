@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 87%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #tableContainer {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .sortable::after {
+            content: '';
+            display: inline-block;
+            margin-left: 5px;
+            vertical-align: middle;
+            width: 0;
+            height: 0;
+            border: 5px solid transparent;
+            border-top-color: #555;
+        }
+        .asc::after {
+            border-top-color: #368ba3;
+        }
+        .desc::after {
+            border-bottom-color: #368ba3;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+        .print-link {
+            color: blue;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Поиск...">
+<div id="tableContainer">
+    <table id="fileDataTable">
+        <thead>
+        <tr>
+            <th onclick="sortTable(0)" class="sortable">Название</th>
+            <th onclick="sortTable(1)" class="sortable">Дата/Время</th>
+            <th onclick="sortTable(2)" class="sortable">Размер (байт)</th>
+            <th onclick="sortTable(3)" class="sortable">Очередь</th>
+            <th onclick="sortTable(4)" class="sortable">Архив</th>
+            <th>Печать</th> <!-- Добавлен заголовок столбца -->
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Используем Thymeleaf для итерации по списку записей из базы данных -->
+        <tr th:each="fileData : ${fileDataList}">
+            <td th:if="${fileData.archive != null}">
+                <a th:text="${fileData.name}" th:href="@{'/download/' + ${fileData.name}}" download></a>
+            </td>
+            <td th:if="${fileData.archive == null}" th:text="${fileData.name}"></td>
+            <td th:text="${fileData.dateTime}"></td>
+            <td th:text="${fileData.size}"></td>
+            <td th:text="${fileData.queue}"></td>
+            <td th:if="${fileData.archive == null}">Не добавлен</td>
+            <td th:if="${fileData.archive != null}">Добавлен</td>
+            <td>
+                <span class="print-link" onclick="printDocument('${fileData.name}')">Печать</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<button class="button" onclick="window.location.href='/addUser'">Добавить пользователя</button>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    function printDocument(fileName) {
+        // Отправить запрос на сервер для получения URL документа
+        $.ajax({
+            type: "POST",
+            url: "/printDocument",
+            contentType: "application/json",
+            data: JSON.stringify({ fileName: fileName }), // Отправляем fileName как тело запроса
+            success: function(response) {
+                // Открыть всплывающее окно с URL документа
+                window.open(response, "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=500,left=500,width=800,height=600");
+            },
+            error: function(xhr, status, error) {
+                console.error("Ошибка при получении URL документа:", error);
+            }
+        });
+    }
+    function sortTable(columnIndex) {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("fileDataTable");
+        switching = true;
+        var headers = table.getElementsByTagName("th");
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[columnIndex];
+                y = rows[i + 1].getElementsByTagName("td")[columnIndex];
+                var xContent = x.textContent || x.innerText;
+                var yContent = y.textContent || y.innerText;
+                // Проверяем, нужно ли менять местами строки
+                if (isNaN(xContent)) {
+                    // Строковая сортировка
+                    if (xContent.toLowerCase() > yContent.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else {
+                    // Числовая сортировка
+                    if (parseInt(xContent) > parseInt(yContent)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+        // Меняем направление сортировки и подсвечиваем столбец
+        var currentSortOrder = headers[columnIndex].classList.contains("asc") ? "asc" : "desc";
+        var newSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+            headers.forEach(function(header) {
+            header.classList.remove("asc", "desc");
+        });
+        headers[columnIndex].classList.add(newSortOrder);
+    }
+
+    function searchTable() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("searchInput");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("fileDataTable");
+        tr = table.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td");
+            var display = "none";
+            for (var j = 0; j < td.length; j++) {
+                if (td[j]) {
+                    txtValue = td[j].textContent || td[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        display = "";
+                        break;
+                    }
+                }
+            }
+            tr[i].style.display = display;
+        }
+    }
+</script>
+</body>
+</html>

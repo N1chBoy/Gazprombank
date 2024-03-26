@@ -1,0 +1,25 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Print Document</title>
+        <style>
+            /* Здесь вы можете добавить стили для вашей печатной формы */
+            /* Например, скрываем кнопку печати на печатной странице */
+            @media print {
+                .print-button {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Print Document</h1>
+    <!-- Добавьте содержимое вашего документа для печати -->
+    <!-- Например, текст документа, изображения и т.д. -->
+
+    <!-- Кнопка для печати документа -->
+    <button class="print-button" onclick="window.print()">Print</button>
+    </body>
+    </html>

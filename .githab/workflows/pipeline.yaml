@@ -1,0 +1,28 @@
+name: Check Style
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  java-check-style:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git clone repo
+        uses: actions/checkout@v2
+
+      - name: Set version java
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+
+      - name: Install java dependencies
+        run: |
+          mvn -B package --file pom.xml
+
+      - name: Test with Maven
+        run: mvn test --file pom.xml
+
+      - name: Checkstyle with Maven
+        run: mvn checkstyle:check --file pom.xml

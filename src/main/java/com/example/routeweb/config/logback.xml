@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>application.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID}){magenta} %clr(---){faint}
+                %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%ex</pattern>
+        </encoder>
+    </appender>
+    <appender name="DATABASE" class="ch.qos.logback.classic.db.DBAppender">
+        <connectionSource class="ch.qos.logback.core.db.DataSourceConnectionSource">
+            <dataSource class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
+                <url>jdbc:sqlserver://localhost:1433/LAPTOP-CLQ3AISS\SQLEXPRESS;databaseName=RouteDb</url>
+                <user>sa</user>
+                <password>12345</password>
+            </dataSource>
+        </connectionSource>
+    </appender>
+
+    <root level="WARN">
+        <appender-ref ref="DATABASE" />
+    </root>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <logger name="com.example" level="WARN" additivity="false">
+        <appender-ref ref="DATABASE" />
+    </logger>
+    <logger name="com.example" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+    <logger name="com.example.routeweb.controllers.FileDataController" level="INFO">
+        <appender-ref ref="routeweb" />
+    </logger>
+</configuration>
