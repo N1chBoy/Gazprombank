@@ -13,12 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up application.yml
-        run: |
-          echo "spring.datasource.url=jdbc:sqlserver://sqlserver:1433;databaseName=RouteDb;encrypt=true;trustServerCertificate=true" >> src/main/resources/application.yml
-          echo "spring.datasource.username=sa" >> src/main/resources/application.yml
-          echo "spring.datasource.password=YourPassword1" >> src/main/resources/application.yml
-
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
