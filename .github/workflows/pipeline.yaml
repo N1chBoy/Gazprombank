@@ -26,3 +26,9 @@ jobs:
 
       - name: Checkstyle with Maven
         run: mvn checkstyle:check --file pom.xml
+
+      - name: Run Checkstyle
+        run: ./gradlew checkstyleMain
+
+      - name: Run PMD
+        run: ./gradlew pmdMain
