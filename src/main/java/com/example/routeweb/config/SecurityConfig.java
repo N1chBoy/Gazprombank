@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.sql.DataSource;
 
+import static com.example.routeweb.models.roleEnum.ADMIN;
+
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -39,8 +41,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.authorizeRequests()
                 .antMatchers("/authorization").permitAll()
-                .antMatchers("/fileData", "/printDocument").hasAnyAuthority("ADMIN")
-                .antMatchers("/fileData", "/printDocument").hasAnyAuthority("EMPLOYEE")
+                .antMatchers("/printDocument", "/addUser", "/download/{fileName}").hasAnyAuthority("ADMIN")
+                .antMatchers("/printDocument").hasAnyAuthority("EMPLOYEE")
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
@@ -53,8 +55,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                             response.sendRedirect("/fileData");
                             return;
                         }
+                    }
+                    for (GrantedAuthority authority : authentication.getAuthorities()) {
                         if ("EMPLOYEE".equals(authority.getAuthority())) {
-                            response.sendRedirect("/fileData");
+                            response.sendRedirect("/fileDataFromEmployee");
                             return;
                         }
                     }

@@ -99,7 +99,7 @@
         <!-- Используем Thymeleaf для итерации по списку записей из базы данных -->
         <tr th:each="fileData : ${fileDataList}">
             <td th:if="${fileData.archive != null}">
-                <a th:href="@{'/download/' + ${fileData.name}}" download th:text="${fileData.name}"></a>
+                <a th:href="@{'/downloadE/' + ${fileData.name}}" download th:text="${fileData.name}"></a>
             </td>
             <td th:if="${fileData.archive == null}" th:text="${fileData.name}"></td>
             <td th:text="${fileData.dateTime}"></td>
@@ -108,35 +108,30 @@
             <td th:if="${fileData.archive == null}">Не добавлен</td>
             <td th:if="${fileData.archive != null}">Добавлен</td>
             <td>
-                <span th:if="${fileData.archive != null}" class="print-link" th:data-filename="${fileData.name}" onclick="printDocument(this)">Печать</span>
-                <span th:unless="${fileData.archive != null}" th:data-filename="${fileData.name}" onclick="printDocument(this)">Печать</span>
+                <span class="print-link" onclick="printDocument('${fileData.name}')">Печать</span>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
-<button class="button" onclick="window.location.href='/addUser'">Добавить пользователя</button>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
-    function printDocument(element) {
-        var fileName = element.getAttribute('data-filename');
-        var url = '/print/' + encodeURIComponent(fileName);
-
-        // Открываем новое окно или вкладку с URL документа
-        var printWindow = window.open(url, '_blank');
-
-        // Пытаемся вызвать функцию печати после загрузки PDF
-        printWindow.addEventListener('load', function() {
-            try {
-                // Это действие может быть заблокировано браузером, если окно было открыто без действия пользователя
-                printWindow.print();
-            } catch (e) {
-                console.error('Ошибка при попытке печати документа:', e);
+    function printDocument(fileName) {
+        // Отправить запрос на сервер для получения URL документа
+        $.ajax({
+            type: "POST",
+            url: "/printDocument",
+            contentType: "application/json",
+            data: JSON.stringify({ fileName: fileName }), // Отправляем fileName как тело запроса
+            success: function(response) {
+                // Открыть всплывающее окно с URL документа
+                window.open(response, "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=500,left=500,width=800,height=600");
+            },
+            error: function(xhr, status, error) {
+                console.error("Ошибка при получении URL документа:", error);
             }
         });
     }
-
-
     // Сортировка
     // Переменная состояния сортировки
     function sortTable(columnIndex) {

@@ -1,10 +1,9 @@
 package com.example.routeweb.controllers;
 
-import com.example.routeweb.services.HashUtils;
 import com.example.routeweb.models.FileModel;
 import com.example.routeweb.services.DatabaseLogService;
 import com.example.routeweb.services.FileDataService;
-import org.apache.commons.io.FilenameUtils;
+import com.example.routeweb.services.HashUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,20 +14,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
 import software.amazon.awssdk.services.s3.S3Client;
+
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.net.URLEncoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 @Controller
-public class FileDataController {
+public class FileDataFromEmployeeController {
 
     private static final Logger errorLogger = LoggerFactory.getLogger("errorLogger");
     private static final Logger infoLogger = LoggerFactory.getLogger("infoLogger");
@@ -40,20 +36,20 @@ public class FileDataController {
     private final S3Client s3Client; // инъекция S3Client
 
     @Autowired
-    public FileDataController(FileDataService fileDataService, S3Client s3Client) {
+    public FileDataFromEmployeeController(FileDataService fileDataService, S3Client s3Client) {
         this.fileDataService = fileDataService;
         this.s3Client = s3Client; // сохранение ссылки на S3Client
     }
 
-    @GetMapping("/fileData")
+    @GetMapping("/fileDataE")
     public String getAllFileData(Model model) {
         infoLogger.info("Getting all file data");
         List<FileModel> fileDataList = fileDataService.getAllFileData();
         model.addAttribute("fileDataList", fileDataList);
-        return "fileData";
+        return "fileDataFromEmployee";
     }
 
-    @GetMapping("/download/{fileName}")
+    @GetMapping("/downloadE/{fileName}")
     @ResponseBody
     public ResponseEntity<InputStreamResource> downloadFile(@PathVariable String fileName) {
         try {
@@ -87,63 +83,6 @@ public class FileDataController {
         } catch (Exception e) {
             errorLogger.error("Error downloading file {}", fileName, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    @GetMapping("/print/{fileName:.+}")
-    public ResponseEntity<InputStreamResource> printFile(@PathVariable String fileName) {
-        try {
-            // Определение MIME-типа исходного файла
-            String originalContentType = determineContentType(fileName);
-            byte[] data;
-
-            if (!"application/pdf".equals(originalContentType)) {
-                // Если файл не PDF, попытаться конвертировать его в PDF
-                data = fileDataService.convertToPdf(fileName);
-                // Изменение имени файла на соответствующее имя PDF
-                fileName = FilenameUtils.getBaseName(fileName) + ".pdf";
-            } else {
-                // Если файл уже в формате PDF, получить его содержимое
-                data = fileDataService.getFileFromStorage(fileName);
-            }
-
-            if (data == null) {
-                // Файл не найден
-                String errorMessage = "Файл " + fileName + " не найден.";
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new InputStreamResource(new ByteArrayInputStream(errorMessage.getBytes())));
-            }
-
-            // Установка заголовков для ответа
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Disposition", "inline; filename=\"" + fileName + "\"");
-            headers.setContentType(MediaType.APPLICATION_PDF);
-
-            // Отправка PDF-файла клиенту
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(new InputStreamResource(new ByteArrayInputStream(data)));
-        } catch (Exception e) {
-            // Обработка исключений
-            String errorMessage = "Ошибка при попытке печати файла: " + fileName;
-            errorLogger.error(errorMessage, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new InputStreamResource(new ByteArrayInputStream(errorMessage.getBytes())));
-        }
-    }
-
-
-    private String determineContentType(String fileName) {
-        String extension = StringUtils.getFilenameExtension(fileName).toLowerCase();
-        switch (extension) {
-            case "pdf":
-                return "application/pdf";
-            case "txt":
-                return "text/plain";
-            case "doc":
-            case "docx":
-                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            default:
-                return "application/octet-stream";
         }
     }
 }

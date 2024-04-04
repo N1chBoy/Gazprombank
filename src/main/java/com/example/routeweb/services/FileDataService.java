@@ -3,13 +3,15 @@ package com.example.routeweb.services;
 import com.example.routeweb.models.FileModel;
 import com.example.routeweb.repositiries.FileRepo;
 import io.jsonwebtoken.io.IOException;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-
+import java.io.*;
+import java.nio.file.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.List;
@@ -73,8 +75,50 @@ public class FileDataService {
         }
     }
 
-    public String getDocumentUrl(String filePath) {
-        return filePath;
+    public byte[] convertToPdf(String inputFilePath) throws IOException, InterruptedException, java.io.IOException {
+        // Загрузка файла из облака
+        byte[] fileContent = getFileFromStorage(inputFilePath);
+        if (fileContent == null) {
+            throw new IOException("Файл не найден в облаке: " + inputFilePath);
+        }
+
+        // Создание временного файла для исходного документа
+        String baseName = FilenameUtils.getBaseName(inputFilePath);
+        File tempInputFile = File.createTempFile(baseName, "." + FilenameUtils.getExtension(inputFilePath));
+        Path tempInputPath = tempInputFile.toPath();
+        Files.write(tempInputPath, fileContent);
+
+        // Создание временного файла для сконвертированного документа
+        File tempOutputFile = File.createTempFile(baseName, ".pdf"); // Создается файл с уникальным именем
+        Path tempOutputPath = tempOutputFile.toPath();
+        tempOutputFile.deleteOnExit(); // Указываем, чтобы файл удалился после завершения программы
+
+        // Запуск процесса конвертации
+        ProcessBuilder builder = new ProcessBuilder(
+                "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+                "--headless",
+                "--convert-to", "pdf",
+                "--outdir", tempInputFile.getParent(),
+                tempInputPath.toString()
+        );
+
+        Process process = builder.start();
+        int exitCode = process.waitFor();
+
+        // Удаляем исходный временный файл
+        Files.delete(tempInputPath);
+
+        if (exitCode != 0) {
+            throw new IOException("Ошибка конвертации файла в PDF, код выхода: " + exitCode);
+        }
+
+        // Чтение сконвертированного файла
+        byte[] pdfData = Files.readAllBytes(tempOutputPath);
+
+        // Удаление временного PDF-файла после чтения
+        Files.delete(tempOutputPath);
+
+        return pdfData;
     }
 }
 
