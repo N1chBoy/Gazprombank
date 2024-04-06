@@ -11,69 +11,72 @@
             margin: 0;
             padding: 20px;
         }
-        h1 {
-            text-align: center;
-            color: #333;
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
         }
-        input[type="text"] {
-            width: 87%;
+
+        .search-input {
+            flex-grow: 1;
+            margin-right: 10px;
             padding: 10px;
-            margin-bottom: 20px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 4px;
             box-sizing: border-box;
         }
-        #tableContainer {
-            overflow-x: auto;
+
+        .button {
+            padding: 10px 15px;
+            border: none;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
+
+        .button-green {
+            background-color: #4CAF50;
+        }
+
+        .button-green:hover {
+            background-color: #45a049;
+        }
+
+        .button-red {
+            background-color: #f44336;
+        }
+
+        .button-red:hover {
+            background-color: #d32f2f;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
         }
+
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
+
         th {
             background-color: #f2f2f2;
-            cursor: pointer;
         }
+
         tr:hover {
             background-color: #f5f5f5;
         }
-        .sortable::after {
-            content: '';
-            display: inline-block;
-            margin-left: 5px;
-            vertical-align: middle;
-            width: 0;
-            height: 0;
-            border: 5px solid transparent;
-            border-top-color: #555;
-        }
-        .asc::after {
-            border-top-color: #368ba3;
-        }
-        .desc::after {
-            border-bottom-color: #368ba3;
-        }
-        .button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 10px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 5px;
-            position: absolute;
-            top: 15px;
-            right: 20px;
-        }
+
         .print-link {
             color: blue;
             cursor: pointer;
@@ -82,7 +85,15 @@
     </style>
 </head>
 <body>
-<input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Поиск...">
+<div class="header">
+    <input type="text" class="search-input" id="searchInput" onkeyup="searchTable()" placeholder="Поиск...">
+    <form id="logoutForm" action="/logout" method="post" style="margin-left: 10px;">
+        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+        <button type="submit" class="button button-red">Выйти из аккаунта</button>
+    </form>
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">
+    </div>
+</div>
 <div id="tableContainer">
     <table id="fileDataTable">
         <thead>
@@ -108,30 +119,34 @@
             <td th:if="${fileData.archive == null}">Не добавлен</td>
             <td th:if="${fileData.archive != null}">Добавлен</td>
             <td>
-                <span class="print-link" onclick="printDocument('${fileData.name}')">Печать</span>
+                <span th:if="${fileData.archive != null}" class="print-link" th:data-filename="${fileData.name}" onclick="printDocument(this)">Печать</span>
+                <span th:unless="${fileData.archive != null}" th:data-filename="${fileData.name}" onclick="printDocument(this)">Печать</span>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
+</div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
-    function printDocument(fileName) {
-        // Отправить запрос на сервер для получения URL документа
-        $.ajax({
-            type: "POST",
-            url: "/printDocument",
-            contentType: "application/json",
-            data: JSON.stringify({ fileName: fileName }), // Отправляем fileName как тело запроса
-            success: function(response) {
-                // Открыть всплывающее окно с URL документа
-                window.open(response, "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=500,left=500,width=800,height=600");
-            },
-            error: function(xhr, status, error) {
-                console.error("Ошибка при получении URL документа:", error);
+    function printDocument(element) {
+        var fileName = element.getAttribute('data-filename');
+        var url = '/printE/' + encodeURIComponent(fileName);
+
+        // Открываем новое окно или вкладку с URL документа
+        var printWindow = window.open(url, '_blank');
+
+        // Пытаемся вызвать функцию печати после загрузки PDF
+        printWindow.addEventListener('load', function() {
+            try {
+                // Это действие может быть заблокировано браузером, если окно было открыто без действия пользователя
+                printWindow.print();
+            } catch (e) {
+                console.error('Ошибка при попытке печати документа:', e);
             }
         });
     }
+
     // Сортировка
     // Переменная состояния сортировки
     function sortTable(columnIndex) {

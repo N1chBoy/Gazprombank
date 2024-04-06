@@ -14,8 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.sql.DataSource;
 
-import static com.example.routeweb.models.roleEnum.ADMIN;
-
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -65,12 +63,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     response.sendRedirect("/fileData");
                 })
 
+
                 .permitAll()
                 .and()
                 .logout()
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/authorization")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
                 .and()
-                .csrf().disable()
                 .cors().disable();
     }
 

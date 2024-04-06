@@ -4,16 +4,21 @@ import com.example.routeweb.models.FileModel;
 import com.example.routeweb.repositiries.FileRepo;
 import io.jsonwebtoken.io.IOException;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import java.io.*;
-import java.nio.file.*;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +26,8 @@ import java.util.Optional;
 public class FileDataService {
 
     private final FileRepo fileRepo;
+
+    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
     private final S3Client s3Client; // инъекция S3Client
 
@@ -75,27 +82,28 @@ public class FileDataService {
         }
     }
 
-    public byte[] convertToPdf(String inputFilePath) throws IOException, InterruptedException, java.io.IOException {
-        // Загрузка файла из облака
-        byte[] fileContent = getFileFromStorage(inputFilePath);
+    // FileDataService.java
+
+    // Этот метод конвертирует файл в формат PDF и возвращает путь к временному файлу PDF
+    public Path convertToPdf(String inputFileName) throws IOException, InterruptedException, java.io.IOException {
+        LOGGER.info("Начало конвертации файла {}", inputFileName);
+        // Загрузка файла из хранилища
+        byte[] fileContent = getFileFromStorage(inputFileName);
         if (fileContent == null) {
-            throw new IOException("Файл не найден в облаке: " + inputFilePath);
+            throw new IOException("Файл не найден в облаке: " + inputFileName);
         }
 
         // Создание временного файла для исходного документа
-        String baseName = FilenameUtils.getBaseName(inputFilePath);
-        File tempInputFile = File.createTempFile(baseName, "." + FilenameUtils.getExtension(inputFilePath));
+        String baseName = FilenameUtils.getBaseName(inputFileName);
+        File tempInputFile = File.createTempFile(baseName, ".pdf");
         Path tempInputPath = tempInputFile.toPath();
+        LOGGER.info("Исходный временный файл создан: {}", tempInputPath);
         Files.write(tempInputPath, fileContent);
 
-        // Создание временного файла для сконвертированного документа
-        File tempOutputFile = File.createTempFile(baseName, ".pdf"); // Создается файл с уникальным именем
-        Path tempOutputPath = tempOutputFile.toPath();
-        tempOutputFile.deleteOnExit(); // Указываем, чтобы файл удалился после завершения программы
 
         // Запуск процесса конвертации
         ProcessBuilder builder = new ProcessBuilder(
-                "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+                "soffice",
                 "--headless",
                 "--convert-to", "pdf",
                 "--outdir", tempInputFile.getParent(),
@@ -105,20 +113,28 @@ public class FileDataService {
         Process process = builder.start();
         int exitCode = process.waitFor();
 
-        // Удаляем исходный временный файл
-        Files.delete(tempInputPath);
-
+        // Проверяем результаты выполнения процесса и логируем ошибки
         if (exitCode != 0) {
+            try (BufferedReader output = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                 BufferedReader errors = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+
+                LOGGER.error("Ошибка конвертации файла. Выходной код: {}", exitCode);
+                output.lines().forEach(line -> LOGGER.error("STDOUT: {}", line));
+                errors.lines().forEach(line -> LOGGER.error("STDERR: {}", line));
+            }
             throw new IOException("Ошибка конвертации файла в PDF, код выхода: " + exitCode);
         }
 
-        // Чтение сконвертированного файла
-        byte[] pdfData = Files.readAllBytes(tempOutputPath);
+        // Проверяем существование и содержимое файла
+        if (!Files.exists(tempInputPath) || Files.size(tempInputPath) == 0) {
+            throw new IOException("Ошибка: сконвертированный файл не найден или пуст.");
+        }
+        LOGGER.info("Конвертация успешна. Файл: {}", tempInputPath);
 
-        // Удаление временного PDF-файла после чтения
-        Files.delete(tempOutputPath);
-
-        return pdfData;
+        // Возвращаем путь к временному файлу PDF
+        return tempInputPath;
     }
+
+
 }
 

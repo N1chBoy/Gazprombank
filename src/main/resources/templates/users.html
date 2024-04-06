@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Список пользователей</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: black;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .no-users {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .button {
+            padding: 10px 15px;
+            border: none;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .button-green {
+            background-color: #4CAF50;
+        }
+        .button-green:hover {
+            background-color: #45a049;
+        }
+        .button-blue {
+            background-color: #f44336;
+        }
+        .button-blue:hover {
+            background-color: #d32f2f;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <button class="button button-blue" onclick="window.location.href='/fileData'">Назад</button>
+    <button class="button button-green" onclick="window.location.href='/addUser'">Добавить пользователя</button>
+</div>
+<h1>Список пользователей</h1>
+<div th:if="${!users.isEmpty()}">
+    <table>
+        <thead>
+        <tr>
+            <th>Логин</th>
+            <th>Роль</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users}">
+            <td th:text="${user.login_user}"></td>
+            <td th:text="${user.getRoles() == 'ADMIN' ? 'Админ' : (user.getRoles() == 'EMPLOYEE' ? 'Сотрудник' : user.getRoles())}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div class="no-users" th:if="${users.isEmpty()}">
+    <p>Пользователей пока нет.</p>
+</div>
+</body>
+</html>

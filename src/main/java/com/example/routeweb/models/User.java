@@ -1,7 +1,6 @@
 package com.example.routeweb.models;
 
 import javax.persistence.*;
-
 import java.util.Set;
 
 @Entity

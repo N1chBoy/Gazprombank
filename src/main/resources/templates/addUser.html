@@ -39,9 +39,11 @@
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            margin-bottom: 15px;
         }
 
-        input[type="submit"] {
+        input[type="submit"],
+        button[type="button"] {
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -53,24 +55,25 @@
             width: 100%;
         }
 
+        button[type="button"] {
+            background-color: #dc3545; /* Красный цвет для кнопки "Назад" */
+        }
+
         .error-message {
             color: #ff0000;
             font-size: 14px;
+            margin-top: 10px;
         }
 
-        .buttons {
+        .center {
             text-align: center;
-            margin-top: 20px;
-        }
-
-        .column {
-            width: 100%;
         }
     </style>
 </head>
 <body>
 <div class="reg-container">
     <form action="/addUser" th:object="${user}" method="post">
+        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
         <div class="column">
             <label for="login_user">Задать логин:</label>
             <input th:field="*{login_user}" type="text" id="login_user" name="login_user" th:value="${user.login_user}" required />
@@ -81,8 +84,11 @@
             <input th:field="*{password_user}" type="password" id="password_user" name="password_user" th:value="${user.password_user}" required />
             <span class="error-message" th:if="${#fields.hasErrors('password_user')}" th:errors="*{password_user}"></span>
         </div>
-        <div class="buttons">
-            <input type="submit" value="Сохранить"/>
+        <div class="center">
+            <input type="submit" value="Сохранить" />
+        </div>
+        <div class="center">
+            <button type="button" class="button-back" onclick="window.history.back();" style="background-color: #dc3545;">Назад</button>
         </div>
     </form>
 </div>
