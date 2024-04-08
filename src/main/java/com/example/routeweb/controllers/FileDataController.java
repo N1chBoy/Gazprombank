@@ -52,7 +52,7 @@ public class FileDataController {
 
     @GetMapping("/fileData")
     public String getAllFileData(Model model, RedirectAttributes redirectAttributes) {
-        infoLogger.info("Getting all file data");
+        infoLogger.info("Получение всех данных файла");
 
         // Очистка папки
         try {
@@ -72,7 +72,7 @@ public class FileDataController {
 
         List<FileModel> fileDataList = fileDataService.getAllFileData();
         model.addAttribute("fileDataList", fileDataList);
-        redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно добавлен.");
+        redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно авторизован.");
         return "fileData";
     }
 
@@ -100,16 +100,16 @@ public class FileDataController {
                 // Кодирование имени файла
                 String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
                 headers.setContentDispositionFormData("attachment", encodedFileName);
-                infoLogger.info("Downloading file {}", fileName);
+                infoLogger.info("Загрузка файла {}", fileName);
 
                 return new ResponseEntity<>(resource, headers, HttpStatus.OK);
             } else {
                 // Хэш-суммы не совпадают, документ был изменен
-                LOGGER.error("File {} has been modified", fileName);
+                LOGGER.error("Файл {} был изменен", fileName);
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
             }
         } catch (Exception e) {
-            errorLogger.error("Error downloading file {}", fileName, e);
+            errorLogger.error("Ошибка загрузки файла {}", fileName, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -122,7 +122,6 @@ public class FileDataController {
 
             // Проверка наличия файла в хранилище
             if (fileContent == null) {
-                LOGGER.error("Файл не найден: {}", fileName);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new InputStreamResource(new ByteArrayInputStream(("Файл не найден: " + fileName).getBytes())));
             }
@@ -132,7 +131,7 @@ public class FileDataController {
 
             // Извлечение сохраненной хэш-суммы из базы данных
             String savedHash = fileDataService.getHashFromDatabase(fileName);
-    
+
             if (fileHash.equals(savedHash)) {
                 // Хэш-суммы совпадают, документ не был изменен
                 LOGGER.info("Запрашиваемый файл: {}", fileName);
