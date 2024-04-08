@@ -132,7 +132,7 @@ public class FileDataController {
 
             // Извлечение сохраненной хэш-суммы из базы данных
             String savedHash = fileDataService.getHashFromDatabase(fileName);
-
+    
             if (fileHash.equals(savedHash)) {
                 // Хэш-суммы совпадают, документ не был изменен
                 LOGGER.info("Запрашиваемый файл: {}", fileName);

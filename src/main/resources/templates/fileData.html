@@ -237,7 +237,8 @@
         filter = input.value.toUpperCase();
         table = document.getElementById("fileDataTable");
         tr = table.getElementsByTagName("tr");
-        for (i = 0; i < tr.length; i++) {
+        // Начинаем перебор с 1, чтобы пропустить первую строку с заголовками
+        for (i = 1; i < tr.length; i++) {
             td = tr[i].getElementsByTagName("td");
             var display = "none";
             for (var j = 0; j < td.length; j++) {
