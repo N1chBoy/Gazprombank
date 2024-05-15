@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Статистика</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f4;
+            overflow: hidden; /* Убираем любые полосы прокрутки на странице */
+        }
+
+        .charts-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 95%;
+            height: 90vh; /* Уменьшаем высоту, чтобы подстроить под высоту экрана */
+            padding: 20px;
+        }
+
+        .chart {
+            width: 45%; /* Подходящий размер для графиков */
+            height: 95%; /* Высота в соответствии с контейнером */
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Центрирование содержимого по вертикали */
+            align-items: center;
+            margin: 0 10px; /* Отступы между графиками */
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 90%; /* Ограничиваем максимальную высоту, чтобы график не выходил за пределы */
+        }
+
+        #backButton {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            text-align: center;
+            text-decoration: none;
+            margin-left: 10px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            background-color: #f44336;
+        }
+
+        button:hover {
+            background-color: #d32f2f;
+        }
+
+        .chart-title {
+            margin-bottom: 15px;
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<button id="backButton" onclick="window.history.back();">Назад</button>
+<div class="charts-container">
+    <div class="chart">
+        <div class="chart-title">Количество документов в очереди</div>
+        <canvas id="queueChart"></canvas>
+    </div>
+    <div class="chart">
+        <canvas id="processingChart"></canvas>
+    </div>
+</div>
+
+<script>
+    function fetchDataAndDrawCharts() {
+        fetch('/statsData')
+            .then(response => response.json())
+            .then(data => {
+                updateCharts(data);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении данных:', error);
+            });
+    }
+
+    function updateCharts(data) {
+        queueChart.data.datasets[0].data = data.queueCounts;
+        queueChart.update();
+
+        processingChart.data.labels = data.dates;
+        processingChart.data.datasets[0].data = data.documentsProcessed;
+        processingChart.update();
+    }
+
+    // Создание круговой диаграммы
+    const queueChart = new Chart(document.getElementById('queueChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Main', 'Dead', 'Wait', 'Important'],
+            datasets: [{
+                data: [],
+                backgroundColor: ['#36a2eb', '#d32f2f', '#e7b743', '#7348cb']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+
+    // Создание гистограммы
+    const processingChart = new Chart(document.getElementById('processingChart'), {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Количество обработанных документов',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+
+    window.onload = fetchDataAndDrawCharts;
+</script>
+</body>
+</html>

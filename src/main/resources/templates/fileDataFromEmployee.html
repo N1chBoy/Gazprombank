@@ -41,14 +41,6 @@
             transition: background-color 0.3s ease;
         }
 
-        .button-green {
-            background-color: #4CAF50;
-        }
-
-        .button-green:hover {
-            background-color: #45a049;
-        }
-
         .button-red {
             background-color: #f44336;
         }
@@ -81,6 +73,11 @@
             color: blue;
             cursor: pointer;
             text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .header, .search-input {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -128,6 +125,8 @@
 </div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
     function printDocument(element) {
         var fileName = element.getAttribute('data-filename');
@@ -239,5 +238,8 @@
         }
     }
 </script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

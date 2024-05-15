@@ -39,7 +39,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.authorizeRequests()
                 .antMatchers("/authorization").permitAll()
-                .antMatchers("/printDocument", "/addUser", "/download/{fileName}").hasAnyAuthority("ADMIN")
+                .antMatchers("/printDocument", "/addUser", "/download/{fileName}", "/complete").hasAnyAuthority("ADMIN")
                 .antMatchers("/printDocument").hasAnyAuthority("EMPLOYEE")
                 .anyRequest().authenticated()
                 .and()
@@ -74,6 +74,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll()
                 .and()
                 .cors().disable();
+
     }
 
     @Bean

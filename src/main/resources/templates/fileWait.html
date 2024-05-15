@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta id="csrfToken" name="_csrf" th:content="${_csrf.token}"/>
+    <meta id="csrfHeader" name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Документы</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -68,14 +70,6 @@
         tr:hover {
             background-color: #f5f5f5;
         }
-        .print-link {
-            color: blue;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .button-container {
-            margin-left: 10px;
-        }
         @media (max-width: 768px) {
             .header, .button-container, .search-input {
                 flex-direction: column;
@@ -86,15 +80,10 @@
 <body>
 <div class="header">
     <input type="text" class="search-input" id="searchInput" onkeyup="searchTable()" placeholder="Поиск...">
-    <div class="button-container">
-        <button class="button button-green" onclick="window.location.href='/users'">Пользователи</button>
-        <button class="button button-green" onclick="window.location.href='/statsFile'">Статистика</button>
-        <button class="button button-green" onclick="window.location.href='/fileWait'">Подтверждения</button>
-    </div>
-    <form id="logoutForm" action="/logout" method="post" style="margin-left: 10px;">
-        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
-        <button type="submit" class="button button-red">Выйти из аккаунта</button>
+    <form id="logoutForm" onsubmit="return false;" style="margin-left: 10px;">
+        <button class="button button-red" onclick="window.history.back(); return false;">Назад</button>
     </form>
+
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">
     </div>
 </div>
@@ -105,48 +94,74 @@
             <th onclick="sortTable(0)" class="sortable">Название</th>
             <th onclick="sortTable(1)" class="sortable">Дата/Время</th>
             <th onclick="sortTable(2)" class="sortable">Размер (байт)</th>
-            <th onclick="sortTable(3)" class="sortable">Очередь</th>
-            <th onclick="sortTable(4)" class="sortable">Архив</th>
-            <th>Печать</th>
+            <th>Действие</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="fileData : ${fileDataList}">
-            <td th:if="${fileData.archive != null}">
-                <a th:href="@{'/download/' + ${fileData.name}}" download th:text="${fileData.name}"></a>
-            </td>
-            <td th:if="${fileData.archive == null}" th:text="${fileData.name}"></td>
+            <td th:text="${fileData.name}"></td>
             <td th:text="${fileData.dateTime}"></td>
             <td th:text="${fileData.size}"></td>
-            <td th:text="${fileData.queue}"></td>
-            <td th:if="${fileData.archive == null}">Не добавлен</td>
-            <td th:if="${fileData.archive != null}">Добавлен</td>
             <td>
-                <span th:if="${fileData.archive != null}" class="print-link" th:data-filename="${fileData.name}" onclick="printDocument(this)">Печать</span>
-                <span th:unless="${fileData.archive != null}" th:data-filename="${fileData.name}" onclick="printDocument(this)">Печать</span>
+                <button class="button button-green" data-toggle="modal" data-target="#confirmArchiveModal">Подтвердить сохранение в архив</button>
             </td>
         </tr>
         </tbody>
     </table>
+    <div class="modal fade" id="confirmArchiveModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabel">Подтверждение сохранения</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите сохранить этот документ?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="noButton">Не сохранять</button>
+                    <button type="button" class="btn btn-primary" id="yesButton">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 
-    function printDocument(element) {
-        var fileName = element.getAttribute('data-filename');
-        var url = '/print/' + encodeURIComponent(fileName);
-
-        var printWindow = window.open(url, '_blank');
-        printWindow.addEventListener('load', function() {
-            try {
-                printWindow.print();
-            } catch (e) {
-                console.error('Ошибка при попытке печати документа:', e);
-            }
+        document.getElementById('yesButton').addEventListener('click', function() {
+            sendPostRequest("true");
+            $('#confirmArchiveModal').modal('hide'); // Закрываем модальное окно
+            $('.modal-backdrop').remove(); // Удаляем тёмный фон вручную
+            $('body').removeClass('modal-open'); // Убираем класс, который блокирует прокрутку
         });
-    }
+
+
+
+        document.getElementById('noButton').addEventListener('click', function() {
+            sendPostRequest("false");
+        });
+
+        function sendPostRequest(confirmValue) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/complete", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.setRequestHeader(csrfHeader, csrfToken);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert("Ответ сервера: " + xhr.responseText);
+                }
+            };
+            xhr.send("confirmBool=" + confirmValue);
+        }
+    });
 
     function sortTable(columnIndex) {
         var table, rows, switching, i, x, y, shouldSwitch, direction, switchCount = 0;

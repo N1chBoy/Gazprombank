@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  camunda:
+    image: camunda/camunda-bpm-platform:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./camunda.cfg:/camunda/camunda.cfg

@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class FileDataService {
@@ -134,6 +135,14 @@ public class FileDataService {
         // Возвращаем путь к временному файлу PDF
         return tempInputPath;
     }
+
+    public List<FileModel> getFilesByQueue(String queue) {
+        return fileRepo.findAll()
+                .stream()
+                .filter(file -> queue.equals(file.getQueue()))
+                .collect(Collectors.toList());
+    }
+
 
 
 }
